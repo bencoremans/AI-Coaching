@@ -78,8 +78,6 @@ print(f"Total pages: {len(hrvdata_json_allpages)}")
 
 properties=[]
 for i in hrvdata_json_allpages:
-    #with open(r"C:\Users\Ben Coremans\Documents\hrv4training12.json", 'a', encoding='utf8') as f:
-    #    json.dump(hrvdata_json_allpages[count], f, ensure_ascii=False, indent=4)
     property = {}
     for obj in i.get('data'):
         if obj.get('heartrateTimestamp'):
