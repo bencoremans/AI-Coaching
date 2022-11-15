@@ -1,14 +1,16 @@
 import requests
 import json
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Start edit parameters
-login = ''
-password = ''
-hrv_csv_file=r''
-startdate = datetime(2022, 6, 1)
+login = 'bencoremans@msn.com'
+password = 'Ben18779HRV!'
+hrv_csv_file=r"C:\Users\Ben Coremans\Documents\HRV\hrv4training.csv"
+#startdate = datetime(2022, 5, 1)
+#date = datetime(2022, 11, 15)
 date = datetime.now() # Getting the current date and time
+startdate = date - timedelta(days=365)
 # End edit 
 
 ContentType = 'application/json'
@@ -61,6 +63,7 @@ page=(f'https://api.backendless.com/v1/data/DailySummaryNoCoreData?pageSize=100&
 hrvdata = requests.get(page, headers=headers)
 hrvdata_json = json.loads(hrvdata.text)
 hrvdata_json_allpages.append(hrvdata_json)
+pd_hrvdata_allpages=pd.DataFrame(hrvdata_json['data'])
 print("Collect page:", page)
 
 while True:
@@ -82,7 +85,7 @@ for i in hrvdata_json_allpages:
     property = {}
     for obj in i.get('data'):
         if obj.get('heartrateTimestamp') == None:
-            continue
+            timestamp_measurement = None
         elif obj.get('heartrateTimestamp'):
             timestamp_measurement=(datetime.fromtimestamp(obj.get('heartrateTimestamp')/1000)).isoformat(sep='T',timespec='auto')
         else:
@@ -98,7 +101,7 @@ for i in hrvdata_json_allpages:
                     'LFHF':round(obj.get('lfhf'),2),
                     'HRV4T_Recovery_Points':round(obj.get('recoveryPoints'),2)
         }
-        properties.append(property)
+        #properties.append(property)
 
         #remove duplicates
         t = tuple(property.items())
@@ -112,10 +115,10 @@ df = pd.DataFrame(properties)
 import numpy as np
 import pandas as pd
 
-#Create Normal Range
-dta_add=[]
-resultlow = []
-resulthigh = []
+dta_add = []
+resulthigh = [] 
+resultlow = [] 
+rMSSDBaseline = []
 for index, row in df.iterrows():
     count += 1
     if index > 60:
@@ -129,7 +132,8 @@ df["rMSSDhigh"] = resulthigh
 
 #create new column to hold 7-day exponentially weighted moving average
 #baseline
-df['rMSSDBaseline'] = (df['rMSSD'].ewm(span=7, adjust=True).mean()).round(2)
+rMSSDBaseline = (df['rMSSD'].ewm(span=7, adjust=True).mean()).round(2)
+df['rMSSDBaseline'] = rMSSDBaseline
 
 #write to csv file
 df.to_csv(hrv_csv_file, index=False, header=True, sep=';')
